@@ -105,21 +105,21 @@ export class AuthService {
     userId: string,
     refreshToken: string
   ): Promise<TokensDto> {
-    const handleForbidden = () => {
-      const message = 'Access denied.';
+    const handleForbidden = (message: string) => {
       this.LOGGER.error(message);
       throw new ForbiddenException(message);
     };
 
     const user = await this.USER_SVC.findOneById(userId);
 
-    if (!user || !user.hashedRefreshToken) handleForbidden();
+    if (!user) handleForbidden('User not found.');
+    if (!user.hashedRefreshToken) handleForbidden('User not logged in.');
 
     const validRefreshToken = await argon2.verify(
       user.hashedRefreshToken,
       refreshToken
     );
-    if (!validRefreshToken) handleForbidden();
+    if (!validRefreshToken) handleForbidden('Invalid token.');
 
     const tokens = await this.getTokens(user.id, user.username);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
