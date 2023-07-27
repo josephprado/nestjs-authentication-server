@@ -136,6 +136,23 @@ describe('AuthController (e2e)', () => {
         });
     });
 
+    it('should replace the current refresh token in the database', async () => {
+      const {
+        username,
+        password,
+        hashedRefreshToken: originalHash
+      } = await signUp(app);
+
+      await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ username, password });
+
+      const { hashedRefreshToken: newHash } = await repo.findOneBy({
+        username
+      });
+      expect(newHash).not.toEqual(originalHash);
+    });
+
     it('should place a refresh_token in cookies with correct attributes', async () => {
       const { username, password } = await signUp(app);
 
@@ -166,6 +183,14 @@ describe('AuthController (e2e)', () => {
         .expect(HttpStatus.OK);
     });
 
+    it('should return UNAUTHORIZED status if no access token is provided in headers', async () => {
+      await signUp(app);
+
+      await request(app.getHttpServer())
+        .get('/api/auth/logout')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
     it('should nullify user hashedRefreshToken in the database', async () => {
       const { accessToken, id } = await signUp(app);
 
@@ -188,6 +213,14 @@ describe('AuthController (e2e)', () => {
         .expect(HttpStatus.OK);
     });
 
+    it('should return UNAUTHORIZED status if no refresh token is provided in cookies', async () => {
+      await signUp(app);
+
+      await request(app.getHttpServer())
+        .get('/api/auth/refresh')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
     it('should return an AccessTokenDto', async () => {
       const { cookies } = await signUp(app);
 
@@ -201,6 +234,21 @@ describe('AuthController (e2e)', () => {
         .expect(({ body }) => {
           expect(body).toEqual(accessTokenDto);
         });
+    });
+
+    it('should replace the current refresh token in the database', async () => {
+      const {
+        id,
+        hashedRefreshToken: originalHash,
+        cookies
+      } = await signUp(app);
+
+      await request(app.getHttpServer())
+        .get('/api/auth/refresh')
+        .set('Cookie', cookies);
+
+      const { hashedRefreshToken: newHash } = await repo.findOneBy({ id });
+      expect(newHash).not.toEqual(originalHash);
     });
 
     it('should place a refresh_token in cookies with correct attributes', async () => {

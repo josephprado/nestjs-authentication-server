@@ -18,6 +18,7 @@ const defaultSignUpDto: SignUpDto = {
 export interface SignUpResult {
   accessToken: string;
   refreshToken: string;
+  hashedRefreshToken: string;
   cookies: string[];
   user: User;
   id: string;
@@ -55,6 +56,7 @@ export const signUp = async (
   return {
     accessToken,
     refreshToken,
+    hashedRefreshToken: user.hashedRefreshToken,
     cookies,
     user,
     id: user.id,
