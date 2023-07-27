@@ -17,11 +17,11 @@ DATABASE_USER=
 DATABASE_PASS=
 DATABASE_NAME=
 
-# JWT authentication secret keys
+# Token secret keys
 JWT_ACCESS_SECRET=
 JWT_REFRESH_SECRET=
 
-# Lifetime of the JWTs (e.g., 30s, 15m, 1h, 7d, etc.)
+# Lifetime of the tokens (e.g., 30s, 15m, 1h, 7d, etc.)
 JWT_ACCESS_EXPIRE=
 JWT_REFRESH_EXPIRE=
 ```

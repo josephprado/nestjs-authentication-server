@@ -10,7 +10,7 @@ import { UserMapper } from './mapper/user.mapper';
 import { User } from './entity/user.entity';
 
 /**
- * Provides services related to authorization
+ * Provides services related to authentication and authorization
  */
 @Module({
   imports: [

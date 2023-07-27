@@ -19,12 +19,7 @@ export abstract class AbstractTokenGuard implements CanActivate {
     private readonly CONFIG: ConfigService,
     private readonly LOGGER: LogService,
     private readonly CONTEXT: string,
-    private readonly SECRET_TYPE: string,
-    private readonly REQUEST_MODIFIER: (
-      request: any,
-      payload: any,
-      token?: string
-    ) => void
+    private readonly SECRET_TYPE: string
   ) {
     // FIXME: logs are using controller context for some reason
     this.LOGGER.setContext(this.CONTEXT);
@@ -32,7 +27,7 @@ export abstract class AbstractTokenGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
+    const token = this.extractToken(request);
 
     if (!token) {
       this.LOGGER.error('Malformed token.');
@@ -42,7 +37,7 @@ export abstract class AbstractTokenGuard implements CanActivate {
       const payload = await this.JWT_SVC.verifyAsync(token, {
         secret: this.CONFIG.get(this.SECRET_TYPE)
       });
-      this.REQUEST_MODIFIER(request, payload, token);
+      this.modifyRequest(request, payload, token);
       payload.sub &&
         this.LOGGER.log(`Authenticated user with id=${payload.sub}.`);
     } catch {
@@ -52,8 +47,19 @@ export abstract class AbstractTokenGuard implements CanActivate {
     return true;
   }
 
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
-  }
+  /**
+   * Retrieves the token form the user request
+   *
+   * @param request An HTTP request
+   */
+  abstract extractToken(request: Request): string | undefined;
+
+  /**
+   * Modifies the HTTP request to add necessary properties if needed
+   *
+   * @param request An HTTP request
+   * @param payload A JWT payload
+   * @param token A JWT
+   */
+  abstract modifyRequest(request: Request, payload: any, token?: string): void;
 }

@@ -6,7 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from '../service/auth.service';
 import { SignUpDto } from '../dto/auth/sign-up.dto';
 import { SignInDto } from '../dto/auth/sign-in.dto';
-import { JwtDto } from '../dto/auth/jwt.dto';
+import { AccessTokenDto } from '../dto/auth/access-token.dto';
 import { randomUUID } from 'crypto';
 import { AuthRequest } from '../dto/auth/auth-request.dto';
 
@@ -44,40 +44,60 @@ describe('AuthController', () => {
   describe('signUp()', () => {
     it('calls svc.signup with correct arguments', async () => {
       const dto = new SignUpDto();
-      await con.signUp(dto);
+
+      jest
+        .spyOn(AuthController.prototype as any, 'setCookieAndReturn')
+        .mockReturnValue(new AccessTokenDto());
+
+      await con.signUp(dto, null);
       expect(svc.signUp).toHaveBeenCalledWith(dto);
     });
 
-    it('should return a JwtDto', async () => {
-      const dto = new SignUpDto();
-      const jwtDto = new JwtDto();
-      jest.spyOn(svc, 'signUp').mockResolvedValue(jwtDto);
-      const actual = await con.signUp(dto);
-      expect(actual).toEqual(jwtDto);
+    it('should return an AccessTokenDto', async () => {
+      const accessTokenDto: AccessTokenDto = {
+        accessToken: randomUUID(),
+        expiresIn: 1
+      };
+      jest
+        .spyOn(AuthController.prototype as any, 'setCookieAndReturn')
+        .mockReturnValue(accessTokenDto);
+
+      const actual = await con.signUp(new SignUpDto(), null);
+      expect(actual).toEqual(accessTokenDto);
     });
   });
 
   describe('signIn()', () => {
     it('should call svc.signIn with correct arguments', async () => {
       const dto = new SignInDto();
-      await con.signIn(dto);
+
+      jest
+        .spyOn(AuthController.prototype as any, 'setCookieAndReturn')
+        .mockReturnValue(new AccessTokenDto());
+
+      await con.signIn(dto, null);
       expect(svc.signIn).toHaveBeenCalledWith(dto);
     });
 
-    it('should return a JwtDto', async () => {
-      const dto = new SignInDto();
-      const jwtDto = new JwtDto();
-      jest.spyOn(svc, 'signIn').mockResolvedValue(jwtDto);
-      const actual = await con.signIn(dto);
-      expect(actual).toEqual(jwtDto);
+    it('should return an AccessTokenDto', async () => {
+      const accessTokenDto: AccessTokenDto = {
+        accessToken: randomUUID(),
+        expiresIn: 1
+      };
+      jest
+        .spyOn(AuthController.prototype as any, 'setCookieAndReturn')
+        .mockReturnValue(accessTokenDto);
+
+      const actual = await con.signIn(new SignInDto(), null);
+      expect(actual).toEqual(accessTokenDto);
     });
   });
 
   describe('signOut()', () => {
     it('should call svc.signOut with correct arguments', async () => {
       const sub = randomUUID();
-      const request = { user: { sub, username: 'username' } };
-      await con.signOut(request as AuthRequest);
+      const req = { user: { sub, username: 'username' } };
+      await con.signOut(req as AuthRequest);
       expect(svc.signOut).toHaveBeenCalledWith(sub);
     });
   });
@@ -87,18 +107,29 @@ describe('AuthController', () => {
       const sub = randomUUID();
       const refreshToken = 'refreshToken';
       const request = { user: { sub, username: 'username', refreshToken } };
-      await con.refreshTokens(request as AuthRequest);
+
+      jest
+        .spyOn(AuthController.prototype as any, 'setCookieAndReturn')
+        .mockReturnValue(new AccessTokenDto());
+
+      await con.refreshTokens(request as AuthRequest, null);
       expect(svc.refreshTokens).toHaveBeenCalledWith(sub, refreshToken);
     });
 
-    it('should return a JwtDto', async () => {
+    it('should return an AccessTokenDto', async () => {
       const sub = randomUUID();
       const refreshToken = 'refreshToken';
       const request = { user: { sub, username: 'username', refreshToken } };
-      const jwtDto = new JwtDto();
-      jest.spyOn(svc, 'refreshTokens').mockResolvedValue(jwtDto);
-      const actual = await con.refreshTokens(request as AuthRequest);
-      expect(actual).toEqual(jwtDto);
+      const accessTokenDto: AccessTokenDto = {
+        accessToken: randomUUID(),
+        expiresIn: 1
+      };
+      jest
+        .spyOn(AuthController.prototype as any, 'setCookieAndReturn')
+        .mockReturnValue(accessTokenDto);
+
+      const actual = await con.refreshTokens(request as AuthRequest, null);
+      expect(actual).toEqual(accessTokenDto);
     });
   });
 });

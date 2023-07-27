@@ -24,7 +24,10 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository for an authorization server.
+
+**DISCLAIMER**:
+I am not a security expert (took a computer security class in college, but that's about it). I will try to update this repository as I learn more about security best practices. I have linked some of the articles that I found most informative while putting this together at the bottom of this document.
 
 ## Setup
 
@@ -60,58 +63,53 @@ This is the root module that starts the application. The AppController provides 
 
 ### AuthModule
 
-This module provides authentication services. See the `Authentication` section below for more details. The following routes are available:
+This module provides authentication and authorization services. The following routes are available:
 
 - `/auth/signup` : Registers a new user in the database.
-- `/auth/login` : If user is registered, returns an access token (for accessing authenticated routes) and a refresh token (for obtaining a new access token after it expires).
+- `/auth/login` : If user is registered, returns an access token (for accessing protected resources) and a refresh token (for obtaining a new access token after it expires).
 - `/auth/logout` : Invalidates the user's refresh token. The user will need to login to obtain new tokens.
 - `/auth/refresh` : Refreshes the access and refresh tokens.
+
+The signup, login, and refresh endpoints all return an access token in the response body and a refresh token in an HTTP only cookie. The expirations of each can be set in the env variables (see the `Environments` section above). Typically, the access token should have a short life (~15 minutes) while the refresh token is long-lived (7+ days).
+
+The HTTP cookie with the refresh token has the following attributes:
+
+- `HttpOnly` : Cookie is inaccessible to JavaScript Document.cookie API
+- `Secure` : Browser only sends cookie on HTTPS requests (not HTTP)
+- `Path=/api/auth/refresh` : Browser only sends cookie if this path is present in the URL
+- `SameSite=Strict` : Browser only sends cookie with requests to the cookie's origin site (i.e., this server)
+
+#### Token storage on the client
+
+On the client side, upon receiving these tokens, precautions must be taken to ensure they are not compromised. Since the refresh token lives in an HTTP only cookie, it is not accessible to the client or JavaScript in general, so it is protected from cross-site scripting (XSS) attacks. However, it remains vulnerable to cross-site request forgery (XSRF), which can be mitigated by other measures (CORS policy, CSRF tokens, etc.). Based on my research, I have determined that the best place for the client to store the access token is in memory (just a regular variable in the code).
+
+```typescript
+const body = await fetch('http://localhost:8081/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'username',
+    password: 'password'
+  })
+});
+const { accessToken, expiresIn } = body.json();
+```
+
+The alternatives (local and session storage) are not secure. I have attached articles in the resources section at the bottom of this document with more info on the topic.
 
 ### LogModule
 
 This module exports a custom LogService that can be used in other modules for application logging. By default, logging is turned off in the `dev-test` environment (the environment that all tests are run on). If you want to turn logging off in any other environment, add the property `LOGS=false` to the appropriate env file.
 
-### CoreModule
-
-This module is intended to house all the core services that the application provides so that all related entities are together in one module. The module contains a `Thing` entity that serves as a template for creating controllers, services, entities, DTOs, and unit tests.
-
 ### Shared directory
 
 This directory (not a module) contains files that are consumed/shared by the other modules.
-
-## Authentication
-
-The AuthModule provides authentication services for the app. To add authentication to any module, import the AuthModule and add the following decorator to the controller or route:
-
-```typescript
-// Add authentication to example.module.ts
-@Module({
-  imports: [AuthModule]
-})
-export class ExampleModule {}
-
-// Authenticate all routes in example.controller.ts
-@UseGuards(AccessTokenGuard)
-@Controller('/example')
-export class ExampleController {}
-
-// Authenticate only this specific route
-@UseGuards(AccessTokenGuard)
-@Get()
-getAll() {}
-```
-
-Any route with this decorator will require an access JSON Web Token (JWT) to proceed. Use the `/api/auth/signup` and `api/auth/login` routes to obtain the access token. If you do not want authentication, you can simply delete the AuthModule and remove its import statement in the other modules.
 
 ## Abstract entities
 
 ### Base entity
 
 The Base entity is an abstract entity containing properties that should apply to all entities, like `createDate` and `updateDate`. If there are other properties that should apply to all entities, add them to this class and have all entities extend from Base.
-
-### User-owned entity
-
-The UserOwned entity represents an object that is owned by a specific user in the database. For example, if this was a To-do list application, each user would own any to-do item that they saved in the database. When querying the database for to-do items, you would only want to return items owned by that user. Extending this entity simplifies the process of tying an object to a user.
 
 ## Installation
 
@@ -148,3 +146,9 @@ $ npm run test:cov
 ## References
 
 - I referenced tutorials from [elvisduru.com](https://www.elvisduru.com/blog/nestjs-jwt-authentication-refresh-token) and [docs.nestjs.com](https://docs.nestjs.com/security/authentication) for creating the AuthModule
+- Other useful articles:
+  - https://mannharleen.github.io/2020-03-19-handling-jwt-securely-part-1/
+  - https://indepth.dev/posts/1382/localstorage-vs-cookies
+  - https://tkacz.pro/how-to-securely-store-jwt-tokens/
+  - https://www.acunetix.com/websitesecurity/cross-site-scripting/
+  - https://portswigger.net/web-security/csrf

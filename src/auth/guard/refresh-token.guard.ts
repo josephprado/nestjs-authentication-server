@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { LogService } from 'src/log/log.service';
+import { Request } from 'express';
 
 /**
  * Route handlers using this guard require a valid refresh JSON Web Token (JWT)
@@ -19,10 +20,15 @@ export class RefreshTokenGuard extends AbstractTokenGuard {
       _CONFIG,
       _LOGGER,
       RefreshTokenGuard.name,
-      'JWT_REFRESH_SECRET',
-      (request, payload, refreshToken) => {
-        request.user = { ...payload, refreshToken };
-      }
+      'JWT_REFRESH_SECRET'
     );
+  }
+
+  extractToken(request: Request): string | undefined {
+    return request.cookies?.refresh_token;
+  }
+
+  modifyRequest(request: Request, payload: any, refreshToken: string): void {
+    request['user'] = { ...payload, refreshToken };
   }
 }

@@ -11,11 +11,11 @@ import { User } from '../entity/user.entity';
 import { SignUpDto } from '../dto/auth/sign-up.dto';
 import { SignInDto } from '../dto/auth/sign-in.dto';
 import { JwtService } from '@nestjs/jwt';
-import { JwtDto } from '../dto/auth/jwt.dto';
+import { TokensDto } from '../dto/auth/tokens.dto';
 import * as argon2 from 'argon2';
 
 /**
- * Provides authentication services
+ * Provides authentication and authorization services
  *
  * @see https://www.elvisduru.com/blog/nestjs-jwt-authentication-refresh-token
  */
@@ -31,12 +31,12 @@ export class AuthService {
   }
 
   /**
-   * Creates a new user in the app
+   * Registers a new user with the server and returns access/refresh tokens
    *
    * @param dto A sign-up DTO
-   * @returns A JWT DTO
+   * @returns A tokens DTO
    */
-  async signUp(dto: SignUpDto): Promise<JwtDto> {
+  async signUp(dto: SignUpDto): Promise<TokensDto> {
     const existingUser = await this.USER_SVC.findOneByUsername(dto.username);
 
     if (existingUser) {
@@ -58,12 +58,13 @@ export class AuthService {
   }
 
   /**
-   * Logs the user into the app
+   * Validates user credentials. If successful, returns access/refresh tokens.
+   * The previous refresh token will be invalidated.
    *
    * @param dto A sign-in DTO
-   * @returns A JWT DTO
+   * @returns A tokens DTO
    */
-  async signIn(dto: SignInDto): Promise<JwtDto> {
+  async signIn(dto: SignInDto): Promise<TokensDto> {
     const handleUnauthorized = () => {
       const message = 'The user credentials are invalid.';
       this.LOGGER.error(message);
@@ -85,7 +86,7 @@ export class AuthService {
   }
 
   /**
-   * Logs the user out of the app
+   * Invalidates the refresh token for the identified user
    *
    * @param userId A user id
    */
@@ -94,13 +95,16 @@ export class AuthService {
   }
 
   /**
-   * Refreshes the user's auth tokens
+   * Generates new access/refresh tokens
    *
    * @param userId A user id
-   * @param refreshToken A JWT refresh token
-   * @returns A JWT DTO
+   * @param refreshToken A refresh token
+   * @returns A tokens DTO
    */
-  async refreshTokens(userId: string, refreshToken: string): Promise<JwtDto> {
+  async refreshTokens(
+    userId: string,
+    refreshToken: string
+  ): Promise<TokensDto> {
     const handleForbidden = () => {
       const message = 'Access denied.';
       this.LOGGER.error(message);
@@ -126,7 +130,7 @@ export class AuthService {
    * Updates the user's refresh token
    *
    * @param userId A user id
-   * @param refreshToken A JWT refresh token
+   * @param refreshToken A refresh token
    */
   private async updateRefreshToken(
     userId: string,
@@ -148,13 +152,16 @@ export class AuthService {
   }
 
   /**
-   * Creates a JWT DTO
+   * Creates new access/refresh tokens
    *
    * @param userId A user id
    * @param username A username
-   * @returns A JWT DTO
+   * @returns A tokens DTO
    */
-  private async getTokens(userId: string, username: string): Promise<JwtDto> {
+  private async getTokens(
+    userId: string,
+    username: string
+  ): Promise<TokensDto> {
     const signToken = async (
       typeKey: string,
       expireKey: string
@@ -177,12 +184,16 @@ export class AuthService {
     ]);
 
     const decodedAccess = this.JWT_SVC.decode(accessToken);
-    const expiresIn = decodedAccess['exp'] - decodedAccess['iat'];
+    const accessExpiresIn = decodedAccess['exp'] - decodedAccess['iat'];
+
+    const decodedRefresh = this.JWT_SVC.decode(refreshToken);
+    const refreshExpiresAt = new Date(decodedRefresh['exp'] * 1000);
 
     return {
       accessToken,
-      expiresIn,
-      refreshToken
+      accessExpiresIn,
+      refreshToken,
+      refreshExpiresAt
     };
   }
 }

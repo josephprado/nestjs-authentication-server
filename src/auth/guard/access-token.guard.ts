@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { LogService } from 'src/log/log.service';
+import { Request } from 'express';
 
 /**
  * Route handlers using this guard require a valid access JSON Web Token (JWT)
@@ -19,10 +20,16 @@ export class AccessTokenGuard extends AbstractTokenGuard {
       _CONFIG,
       _LOGGER,
       AccessTokenGuard.name,
-      'JWT_ACCESS_SECRET',
-      (request, payload) => {
-        request.user = payload;
-      }
+      'JWT_ACCESS_SECRET'
     );
+  }
+
+  extractToken(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
+
+  modifyRequest(request: Request, payload: any): void {
+    request['user'] = payload;
   }
 }

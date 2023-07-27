@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 import { SignUpDto } from '../dto/auth/sign-up.dto';
 import { SignInDto } from '../dto/auth/sign-in.dto';
 import { JwtService } from '@nestjs/jwt';
-import { JwtDto } from '../dto/auth/jwt.dto';
+import { TokensDto } from '../dto/auth/tokens.dto';
 import {
   BadRequestException,
   ForbiddenException,
@@ -119,25 +119,26 @@ describe('AuthService', () => {
       });
     });
 
-    it('should return a JwtDto if successful', async () => {
+    it('should return a TokensDto if successful', async () => {
       const dto: SignUpDto = {
         username: 'username',
         email: 'username@email.com',
         password: 'password'
       };
       jest.spyOn(userSvc, 'create').mockResolvedValue(new User());
-      const jwtDto: JwtDto = {
+      const tokensDto: TokensDto = {
         accessToken: expect.any(String),
+        accessExpiresIn: expect.any(Number),
         refreshToken: expect.any(String),
-        expiresIn: expect.any(Number)
+        refreshExpiresAt: expect.any(Date)
       };
       const actual = await authSvc.signUp(dto);
-      expect(actual).toEqual(jwtDto);
+      expect(actual).toEqual(tokensDto);
     });
   });
 
   describe('signIn()', () => {
-    it('should check if username already exists', async () => {
+    it('should check if username exists', async () => {
       const dto: SignInDto = {
         username: 'username',
         password: 'password'
@@ -193,20 +194,21 @@ describe('AuthService', () => {
       });
     });
 
-    it('should return a JwtDto if successful', async () => {
+    it('should return a TokensDto if successful', async () => {
       const dto: SignInDto = {
         username: 'username',
         password: 'password'
       };
       jest.spyOn(userSvc, 'findOneByUsername').mockResolvedValue(new User());
       jest.spyOn(argon2, 'verify').mockResolvedValue(true);
-      const jwtDto: JwtDto = {
+      const tokensDto: TokensDto = {
         accessToken: expect.any(String),
+        accessExpiresIn: expect.any(Number),
         refreshToken: expect.any(String),
-        expiresIn: expect.any(Number)
+        refreshExpiresAt: expect.any(Date)
       };
       const actual = await authSvc.signIn(dto);
-      expect(actual).toEqual(jwtDto);
+      expect(actual).toEqual(tokensDto);
     });
   });
 
@@ -295,7 +297,7 @@ describe('AuthService', () => {
       });
     });
 
-    it('should return a JwtDto if successful', async () => {
+    it('should return a TokensDto if successful', async () => {
       const user: User = {
         id: randomUUID(),
         username: 'username',
@@ -307,13 +309,14 @@ describe('AuthService', () => {
       };
       jest.spyOn(userSvc, 'findOneById').mockResolvedValue(user);
       jest.spyOn(argon2, 'verify').mockResolvedValue(true);
-      const jwtDto: JwtDto = {
+      const tokensDto: TokensDto = {
         accessToken: expect.any(String),
+        accessExpiresIn: expect.any(Number),
         refreshToken: expect.any(String),
-        expiresIn: expect.any(Number)
+        refreshExpiresAt: expect.any(Date)
       };
       const actual = await authSvc.refreshTokens(user.id, 'refreshToken');
-      expect(actual).toEqual(jwtDto);
+      expect(actual).toEqual(tokensDto);
     });
   });
 });

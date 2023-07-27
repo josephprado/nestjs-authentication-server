@@ -4,7 +4,6 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { LogModule } from 'src/log/log.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { AppController } from './app.controller';
-import { CoreModule } from 'src/core/core.module';
 
 @Module({
   imports: [
@@ -29,8 +28,7 @@ import { CoreModule } from 'src/core/core.module';
         } as TypeOrmModuleOptions)
     }),
     LogModule,
-    AuthModule,
-    CoreModule
+    AuthModule
   ],
   controllers: [AppController]
 })

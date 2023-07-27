@@ -18,6 +18,7 @@ const defaultSignUpDto: SignUpDto = {
 export interface SignUpResult {
   accessToken: string;
   refreshToken: string;
+  cookies: string[];
   user: User;
   id: string;
   username: string;
@@ -37,7 +38,8 @@ export const signUp = async (
   dto: SignUpDto = defaultSignUpDto
 ): Promise<SignUpResult> => {
   const {
-    body: { accessToken, refreshToken }
+    body: { accessToken },
+    headers
   } = await request(app.getHttpServer()).post('/api/auth/signup').send(dto);
 
   const { body: users } = await request(app.getHttpServer())
@@ -45,10 +47,15 @@ export const signUp = async (
     .set('Authorization', `Bearer ${accessToken}`);
 
   const user = users.find((user: User) => user.username === dto.username);
+  const cookies = headers['set-cookie'];
+  const refreshToken = cookies.find((c: string) =>
+    c.startsWith('refresh_token')
+  );
 
   return {
     accessToken,
     refreshToken,
+    cookies,
     user,
     id: user.id,
     username: user.username,
