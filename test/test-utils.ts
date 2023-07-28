@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { SignUpDto } from 'src/auth/dto/auth/sign-up.dto';
 import { User } from 'src/auth/entity/user.entity';
-import * as request from 'supertest';
+import request from 'supertest';
 
 /**
  * The default sign-up DTO used with the {@link signUp} function
