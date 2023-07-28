@@ -25,6 +25,7 @@ import { AppController } from './app.controller';
           url: config.get('DATABASE_URL'),
           entityPrefix: 'db_',
           autoLoadEntities: true,
+          ssl: { rejectUnauthorized: false },
           synchronize: process.env.NODE_ENV === 'prod' ? false : true
         } as TypeOrmModuleOptions)
     }),
