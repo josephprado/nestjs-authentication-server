@@ -14,7 +14,7 @@ import {
   UnauthorizedException
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import * as argon2 from 'argon2';
+import argon2 from 'argon2';
 
 describe('AuthService', () => {
   let authSvc: AuthService;

@@ -12,7 +12,7 @@ import { SignUpDto } from '../dto/auth/sign-up.dto';
 import { SignInDto } from '../dto/auth/sign-in.dto';
 import { JwtService } from '@nestjs/jwt';
 import { TokensDto } from '../dto/auth/tokens.dto';
-import * as argon2 from 'argon2';
+import argon2 from 'argon2';
 
 /**
  * Provides authentication and authorization services

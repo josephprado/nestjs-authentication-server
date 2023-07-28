@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from 'src/app/app.module';
 import { LogService } from 'src/log/log.service';
 import { ConfigService } from '@nestjs/config';
@@ -12,8 +12,8 @@ import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from 'src/auth/entity/user.entity';
 import { signUp } from './test-utils';
-import * as cookieParser from 'cookie-parser';
-import * as argon2 from 'argon2';
+import cookieParser from 'cookie-parser';
+import argon2 from 'argon2';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
