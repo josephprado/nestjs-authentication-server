@@ -65,10 +65,10 @@ This is the root module that starts the application. The AppController provides 
 
 This module provides authentication and authorization services. The following routes are available:
 
-- `/auth/signup` : Registers a new user in the database.
-- `/auth/login` : If user is registered, returns an access token (for accessing protected resources) and a refresh token (for obtaining a new access token after it expires).
-- `/auth/logout` : Invalidates the user's refresh token. The user will need to login to obtain new tokens.
-- `/auth/refresh` : Refreshes the access and refresh tokens.
+- `/api/auth/signup` : Registers a new user in the database.
+- `/api/auth/login` : If user is registered, returns an access token (for accessing protected resources) and a refresh token (for obtaining a new access token after it expires).
+- `/api/auth/logout` : Invalidates the user's refresh token. The user will need to login to obtain new tokens.
+- `/api/auth/refresh` : Refreshes the access and refresh tokens.
 
 The signup, login, and refresh endpoints all return an access token in the response body and a refresh token in an HTTP only cookie. The expirations of each can be set in the env variables (see the `Environments` section above). Typically, the access token should have a short life (~15 minutes) while the refresh token is long-lived (7+ days).
 
