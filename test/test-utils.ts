@@ -47,9 +47,13 @@ export const signUp = async (
     .set('Authorization', `Bearer ${accessToken}`);
 
   const user = users.find((user: User) => user.username === dto.username);
-  const cookies = headers['set-cookie'];
-  const refreshToken = cookies.find((c: string) =>
+  const cookies: string[] = headers['set-cookie'];
+  const refreshTokenCookie = cookies.find((c: string) =>
     c.startsWith('refresh_token')
+  );
+  const refreshToken = refreshTokenCookie.substring(
+    'refresh_token='.length,
+    refreshTokenCookie.indexOf(';')
   );
 
   return {

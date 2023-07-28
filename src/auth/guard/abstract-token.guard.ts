@@ -38,8 +38,7 @@ export abstract class AbstractTokenGuard implements CanActivate {
         secret: this.CONFIG.get(this.SECRET_TYPE)
       });
       this.modifyRequest(request, payload, token);
-      payload.sub &&
-        this.LOGGER.log(`Authenticated user with id=${payload.sub}.`);
+      payload.sub && this.LOGGER.log(`Authorized user with id=${payload.sub}.`);
     } catch {
       this.LOGGER.error('Invalid token.');
       throw new UnauthorizedException();
