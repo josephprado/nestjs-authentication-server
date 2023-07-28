@@ -22,6 +22,7 @@ import { AppController } from './app.controller';
           username: config.get('DATABASE_USER'),
           password: config.get('DATABASE_PASS'),
           database: config.get('DATABASE_NAME'),
+          url: config.get('DATABASE_URL'),
           entityPrefix: 'db_',
           autoLoadEntities: true,
           synchronize: process.env.NODE_ENV === 'prod' ? false : true
