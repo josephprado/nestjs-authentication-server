@@ -1,6 +1,12 @@
 name: build-and-test
 on:
   workflow_dispatch:
+  push:
+    branches: heroku
+    paths-ignore:
+      - '.github/workflows/**'
+      - '**/README*'
+      - '**/readme*'
   pull_request:
     branches: [main. heroku]
     types: [opened, synchronize, reopened]
