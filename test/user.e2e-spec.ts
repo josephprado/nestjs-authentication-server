@@ -7,6 +7,7 @@ import { UserService } from 'src/auth/service/user.service';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from 'src/auth/entity/user.entity';
+import { UserDto } from 'src/auth/dto/user/user.dto';
 import { SignUpDto } from 'src/auth/dto/auth/sign-up.dto';
 import { randomUUID } from 'crypto';
 import { signUp } from './test-utils';
@@ -40,6 +41,12 @@ describe('UserController (e2e)', () => {
   });
 
   describe('GET /api/users', () => {
+    it('should require an access token', async () => {
+      await request(app.getHttpServer())
+        .get('/api/users')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
     it('should return OK status', async () => {
       const { accessToken } = await signUp(app);
 
@@ -49,7 +56,7 @@ describe('UserController (e2e)', () => {
         .expect(HttpStatus.OK);
     });
 
-    it('should return a list of all users', async () => {
+    it('should return a list of all user DTOs', async () => {
       const n = 5;
       let accessToken: string;
 
@@ -71,6 +78,14 @@ describe('UserController (e2e)', () => {
   });
 
   describe('GET /api/users/:id', () => {
+    it('should require an access token', async () => {
+      const { id } = await signUp(app);
+
+      await request(app.getHttpServer())
+        .get(`/api/users/${id}`)
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
     it('should return OK status', async () => {
       const { accessToken, id } = await signUp(app);
 
@@ -94,19 +109,28 @@ describe('UserController (e2e)', () => {
 
     it('should return a user DTO if it exists', async () => {
       const { accessToken, id, username, email } = await signUp(app);
+      const dto: UserDto = { id, username, email };
 
       await request(app.getHttpServer())
         .get(`/api/users/${id}`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(({ body }) => {
-          expect(body.id).toEqual(id);
-          expect(body.username).toEqual(username);
-          expect(body.email).toEqual(email);
+          expect(body).toEqual(dto);
         });
     });
   });
 
   describe('PATCH /api/users/:id', () => {
+    it('should require an access token', async () => {
+      const { id, username } = await signUp(app);
+      const newUsername = `${username}1`;
+
+      await request(app.getHttpServer())
+        .patch(`/api/users/${id}`)
+        .send({ username: newUsername })
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
     it('should return OK status', async () => {
       const { accessToken, id, username } = await signUp(app);
       const newUsername = `${username}1`;
@@ -133,6 +157,14 @@ describe('UserController (e2e)', () => {
   });
 
   describe('DELETE /api/users/:id', () => {
+    it('should require an access token', async () => {
+      const { id } = await signUp(app);
+
+      await request(app.getHttpServer())
+        .delete(`/api/users/${id}`)
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
     it('should return NO CONTENT status', async () => {
       const { accessToken, id } = await signUp(app);
 
@@ -149,7 +181,8 @@ describe('UserController (e2e)', () => {
         .delete(`/api/users/${id}`)
         .set('Authorization', `Bearer ${accessToken}`);
 
-      expect(await repo.findOneBy({ id })).toBeNull();
+      const actual = await repo.findOneBy({ id });
+      expect(actual).toBeNull();
     });
   });
 });
