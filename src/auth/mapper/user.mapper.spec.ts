@@ -16,7 +16,7 @@ describe('UserMapper', () => {
   });
 
   describe('userToDto()', () => {
-    it('should convert a User to UserDto', () => {
+    it('should convert a user to user DTO', () => {
       const user: User = {
         id: randomUUID(),
         username: 'username',
