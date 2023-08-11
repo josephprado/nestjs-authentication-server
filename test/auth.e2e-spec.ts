@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from 'src/auth/service/auth.service';
 import { AccessTokenDto } from 'src/auth/dto/auth/access-token.dto';
+import { SignInResponseDto } from 'src/auth/dto/auth/sign-in-response.dto';
 import { UserService } from 'src/auth/service/user.service';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -139,18 +140,19 @@ describe('AuthController (e2e)', () => {
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
-    it('should return an AccessTokenDto', async () => {
-      const { username, password } = await signUp(app);
+    it('should return a SignInResponseDTO', async () => {
+      const { id: userId, username, password } = await signUp(app);
 
-      const accessTokenDto: AccessTokenDto = {
+      const signInResponseDto: SignInResponseDto = {
         accessToken: expect.any(String),
-        expiresIn: expect.any(Number)
+        expiresIn: expect.any(Number),
+        userId
       };
       await request(app.getHttpServer())
         .post('/api/auth/login')
         .send({ username, password })
         .expect(({ body }) => {
-          expect(body).toEqual(accessTokenDto);
+          expect(body).toEqual(signInResponseDto);
         });
     });
 
