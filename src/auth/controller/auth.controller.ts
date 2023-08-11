@@ -10,11 +10,13 @@ import {
   UseGuards
 } from '@nestjs/common';
 import { LogService } from 'src/log/log.service';
+import { UserService } from '../service/user.service';
 import { AuthService } from '../service/auth.service';
 import { SignUpDto } from '../dto/auth/sign-up.dto';
 import { SignInDto } from '../dto/auth/sign-in.dto';
 import { TokensDto } from '../dto/auth/tokens.dto';
 import { AccessTokenDto } from '../dto/auth/access-token.dto';
+import { SignInResponseDto } from '../dto/auth/sign-in-response.dto';
 import { AccessTokenGuard } from '../guard/access-token.guard';
 import { RefreshTokenGuard } from '../guard/refresh-token.guard';
 import { AuthRequest } from '../dto/auth/auth-request.dto';
@@ -27,6 +29,7 @@ import { Response } from 'express';
 export class AuthController {
   constructor(
     private readonly AUTH_SVC: AuthService,
+    private readonly USER_SVC: UserService,
     private readonly LOGGER: LogService
   ) {
     this.LOGGER.setContext(AuthController.name);
@@ -50,22 +53,23 @@ export class AuthController {
   }
 
   /**
-   * Validates user credentials. If successful, returns an access token.
+   * Validates user credentials. If successful, returns an access token and the user id.
    * The previous refresh token will be invalidated.
    *
    * @param dto A sign-in DTO
    * @param res An HTTP response
-   * @returns An access-token DTO
+   * @returns A sign-in-response DTO
    */
   @HttpCode(HttpStatus.OK)
   @Post('/login')
   async signIn(
     @Body() dto: SignInDto,
     @Res({ passthrough: true }) res: Response
-  ): Promise<AccessTokenDto> {
+  ): Promise<SignInResponseDto> {
     this.LOGGER.log(`User ${dto.username} login attempt.`);
     const tokens = await this.AUTH_SVC.signIn(dto);
-    return this.setCookieAndReturn(tokens, res);
+    const userId = (await this.USER_SVC.findOneByUsername(dto.username)).id;
+    return { ...this.setCookieAndReturn(tokens, res), userId };
   }
 
   /**
