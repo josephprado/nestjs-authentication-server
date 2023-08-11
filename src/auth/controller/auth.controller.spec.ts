@@ -7,12 +7,16 @@ import { AuthService } from '../service/auth.service';
 import { SignUpDto } from '../dto/auth/sign-up.dto';
 import { SignInDto } from '../dto/auth/sign-in.dto';
 import { AccessTokenDto } from '../dto/auth/access-token.dto';
+import { SignInResponseDto } from '../dto/auth/sign-in-response.dto';
+import { UserService } from '../service/user.service';
+import { User } from '../entity/user.entity';
 import { randomUUID } from 'crypto';
 import { AuthRequest } from '../dto/auth/auth-request.dto';
 
 describe('AuthController', () => {
   let con: AuthController;
-  let svc: AuthService;
+  let authSvc: AuthService;
+  let userSvc: UserService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -21,6 +25,10 @@ describe('AuthController', () => {
         ConfigService,
         LogService,
         JwtService,
+        {
+          provide: UserService,
+          useValue: { findOneByUsername: jest.fn() }
+        },
         {
           provide: AuthService,
           useValue: {
@@ -34,7 +42,8 @@ describe('AuthController', () => {
     }).compile();
 
     con = module.get<AuthController>(AuthController);
-    svc = module.get<AuthService>(AuthService);
+    authSvc = module.get<AuthService>(AuthService);
+    userSvc = module.get<UserService>(UserService);
   });
 
   afterEach(() => {
@@ -50,7 +59,7 @@ describe('AuthController', () => {
         .mockReturnValue(new AccessTokenDto());
 
       await con.signUp(dto, null);
-      expect(svc.signUp).toHaveBeenCalledWith(dto);
+      expect(authSvc.signUp).toHaveBeenCalledWith(dto);
     });
 
     it('should return an AccessTokenDto', async () => {
@@ -69,27 +78,55 @@ describe('AuthController', () => {
 
   describe('signIn()', () => {
     it('should call svc.signIn with correct arguments', async () => {
-      const dto = new SignInDto();
+      const dto: SignInDto = {
+        username: 'username',
+        password: 'password'
+      };
 
       jest
         .spyOn(AuthController.prototype as any, 'setCookieAndReturn')
         .mockReturnValue(new AccessTokenDto());
 
+      jest.spyOn(userSvc, 'findOneByUsername').mockResolvedValue(new User());
+
       await con.signIn(dto, null);
-      expect(svc.signIn).toHaveBeenCalledWith(dto);
+      expect(authSvc.signIn).toHaveBeenCalledWith(dto);
     });
 
-    it('should return an AccessTokenDto', async () => {
+    it('should return a SignInResponseDto', async () => {
+      const user: User = {
+        id: randomUUID(),
+        username: 'username',
+        email: 'username@email.com',
+        hashedPassword: 'xyz',
+        createDate: new Date(),
+        updateDate: new Date()
+      };
+      const signInDto: SignInDto = {
+        username: user.username,
+        password: 'password'
+      };
       const accessTokenDto: AccessTokenDto = {
         accessToken: randomUUID(),
         expiresIn: 1
       };
+      const signInResponseDto: SignInResponseDto = {
+        ...accessTokenDto,
+        userId: user.id
+      };
+
       jest
         .spyOn(AuthController.prototype as any, 'setCookieAndReturn')
         .mockReturnValue(accessTokenDto);
 
-      const actual = await con.signIn(new SignInDto(), null);
-      expect(actual).toEqual(accessTokenDto);
+      jest
+        .spyOn(userSvc, 'findOneByUsername')
+        .mockImplementation(async (username) =>
+          username === user.username ? user : null
+        );
+
+      const actual = await con.signIn(signInDto, null);
+      expect(actual).toEqual(signInResponseDto);
     });
   });
 
@@ -98,7 +135,7 @@ describe('AuthController', () => {
       const sub = randomUUID();
       const req = { user: { sub, username: 'username' } };
       await con.signOut(req as AuthRequest);
-      expect(svc.signOut).toHaveBeenCalledWith(sub);
+      expect(authSvc.signOut).toHaveBeenCalledWith(sub);
     });
   });
 
@@ -113,7 +150,7 @@ describe('AuthController', () => {
         .mockReturnValue(new AccessTokenDto());
 
       await con.refreshTokens(request as AuthRequest, null);
-      expect(svc.refreshTokens).toHaveBeenCalledWith(sub, refreshToken);
+      expect(authSvc.refreshTokens).toHaveBeenCalledWith(sub, refreshToken);
     });
 
     it('should return an AccessTokenDto', async () => {
