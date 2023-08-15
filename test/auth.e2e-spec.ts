@@ -258,6 +258,28 @@ describe('AuthController (e2e)', () => {
       const { hashedRefreshToken } = await repo.findOneBy({ id });
       expect(hashedRefreshToken).toBeNull();
     });
+
+    it('should remove the refresh_token cookie in the client response', async () => {
+      const { accessToken } = await signUp(app);
+
+      await request(app.getHttpServer())
+        .get('/api/auth/logout')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(({ headers }) => {
+          const refreshTokenCookie = headers['set-cookie'].find(
+            (cookie: string) => cookie.startsWith('refresh_token')
+          );
+          const expires = new Date(
+            refreshTokenCookie
+              .split(';')
+              .find((x: string) => x.includes('Expires'))
+              .replace('Expires=', '')
+          );
+          expect(refreshTokenCookie).toBeDefined();
+          expect(refreshTokenCookie).toContain('Path=/api/auth/refresh');
+          expect(expires.getTime()).toBeLessThan(new Date().getTime());
+        });
+    });
   });
 
   describe('GET /api/auth/refresh', () => {
