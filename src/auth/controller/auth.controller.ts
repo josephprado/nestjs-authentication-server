@@ -35,6 +35,9 @@ export class AuthController {
     this.LOGGER.setContext(AuthController.name);
   }
 
+  REFRESH_TOKEN = 'refresh_token';
+  REFRESH_TOKEN_PATH = '/api/auth/refresh';
+
   /**
    * Registers a new user with the server and provides an access token
    *
@@ -77,12 +80,17 @@ export class AuthController {
    * as a 'Bearer' token in the Authorization header of the request.
    *
    * @param req An authenticated HTTP request object
+   * @param res An HTTP response
    */
   @UseGuards(AccessTokenGuard)
   @Get('/logout')
-  async signOut(@Req() req: AuthRequest): Promise<void> {
+  async signOut(
+    @Req() req: AuthRequest,
+    @Res({ passthrough: true }) res: Response
+  ): Promise<void> {
     this.LOGGER.log(`User ${req.user.username} logout.`);
     await this.AUTH_SVC.signOut(req.user.sub);
+    res.clearCookie(this.REFRESH_TOKEN, { path: this.REFRESH_TOKEN_PATH });
   }
 
   /**
@@ -119,7 +127,7 @@ export class AuthController {
     const { accessToken, accessExpiresIn, refreshToken, refreshExpiresAt } =
       tokens;
 
-    response.cookie('refresh_token', refreshToken, {
+    response.cookie(this.REFRESH_TOKEN, refreshToken, {
       // Cookie is inaccessible to JavaScript Document.cookie API
       httpOnly: true,
 
@@ -127,7 +135,7 @@ export class AuthController {
       secure: true,
 
       // Browser only sends cookie if this path is present in the URL
-      path: '/api/auth/refresh',
+      path: this.REFRESH_TOKEN_PATH,
 
       // Browser only sends cookie with requests to the cookie's origin site.
       // If sameSite=lax, browser also sends cookie when user navigates to origin site (from a link)

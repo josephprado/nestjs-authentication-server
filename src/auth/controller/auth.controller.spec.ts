@@ -12,6 +12,7 @@ import { UserService } from '../service/user.service';
 import { User } from '../entity/user.entity';
 import { randomUUID } from 'crypto';
 import { AuthRequest } from '../dto/auth/auth-request.dto';
+import { Response } from 'express';
 
 describe('AuthController', () => {
   let con: AuthController;
@@ -134,7 +135,12 @@ describe('AuthController', () => {
     it('should call svc.signOut with correct arguments', async () => {
       const sub = randomUUID();
       const req = { user: { sub, username: 'username' } };
-      await con.signOut(req as AuthRequest);
+      const mockResponse = { clearCookie: () => {} };
+
+      await con.signOut(
+        req as AuthRequest,
+        mockResponse as unknown as Response
+      );
       expect(authSvc.signOut).toHaveBeenCalledWith(sub);
     });
   });
